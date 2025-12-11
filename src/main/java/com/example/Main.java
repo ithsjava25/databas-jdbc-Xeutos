@@ -138,16 +138,16 @@ public class Main {
 
     private void missionCount(String url, String user, String pass, Scanner scanner) {
         System.out.println("Enter a year");
-        String launch_date = scanner.nextLine().trim();
+        int launch_date = Integer.parseInt(scanner.nextLine());
         String query = "select count(*) from moon_mission where Year(launch_date) = ?";
 
         try (Connection connection = DriverManager.getConnection(url, user, pass)) {
 
             try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1, launch_date);
+                preparedStatement.setInt(1, launch_date);
                 ResultSet result = preparedStatement.executeQuery();
-
-                System.out.println(result.getString(1));
+                result.next();
+                System.out.println("there were " + result.getString(1) + " missions year " + launch_date);
             }
 
         } catch (SQLException e) {
