@@ -1,8 +1,9 @@
 package com.example;
 
 import java.sql.*;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Objects;
+import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -26,117 +27,63 @@ public class Main {
                             "as system properties (-Dkey=value) or environment variables.");
         }
 
-//        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-//        } catch (SQLException e) {
-//            throw new RuntimeException(e);
-//        }
-        //Todo: Starting point for your code
+        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
+            AccountRepository account = new AccountRepository(connection);
+            MoonMissionRepository moonMission = new MoonMissionRepository(connection);
+            Scanner scanner = new Scanner(System.in);
 
-        Scanner scanner = new Scanner(System.in);
-        boolean verifiedUser = validateUser(jdbcUrl, dbUser, dbPass, scanner);
 
-        System.out.println("""
-                test
+            boolean verifiedUser = validateUser(account, scanner); ;
+
+            System.out.println("""
+                1) List moon missions
+                2) Mission by mission id
+                3) Mission count for a given year
+                4) Create account
+                5) Update account password
+                6) Delete account
+                0) Exit
                 """);
 
 
-        while (verifiedUser) {
-            String input = scanner.nextLine();
+            while (verifiedUser) {
+                String input = scanner.nextLine();
 
-            switch (input) {
-                    case "1" -> missions(jdbcUrl, dbUser, dbPass);
-                    case "2" -> missionById(jdbcUrl, dbUser, dbPass, scanner);
-                    case "3" -> missionCount(jdbcUrl, dbUser, dbPass, scanner);
-                    case "4" -> createAccount(jdbcUrl, dbUser, dbPass, scanner);
-                    case "5" -> updateAccountPassword(jdbcUrl, dbUser, dbPass, scanner);
-                    case "6" -> deleteAccount(jdbcUrl, dbUser, dbPass, scanner);
+                switch (input) {
+                    case "1" -> moonMission.getMissions();
+                    case "2" -> missionById(moonMission, scanner);
+                    case "3" -> missionCount(moonMission, scanner);
+                    case "4" -> createAccount(account, scanner);
+                    case "5" -> updateAccountPassword(account, scanner);
+                    case "6" -> deleteAccount(account, scanner);
                     case "0" -> verifiedUser =  false;
                     default -> System.out.println("Invalid output");
                 }
-        }
-    }
-
-
-
-    private static boolean validateUser(String jdbcUrl, String dbUser, String dbPass, Scanner scanner) {
-
-
-
-        try (Connection connection = DriverManager.getConnection(jdbcUrl, dbUser, dbPass)) {
-            String query = "select name, password from account where name = ?";
-
-            try(PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                System.out.println("Enter username: ");
-                String username = scanner.nextLine();
-                System.out.println("Enter password: ");
-                String password = scanner.nextLine();
-
-                preparedStatement.setString(1, username);
-                try(ResultSet result = preparedStatement.executeQuery()) {
-                    if (result.next()) {
-                        String name = result.getString(1);
-                        String pass = result.getString(2);
-
-                        if (Objects.equals(name, username) && Objects.equals(pass, password)) {
-                            return true;
-                        }
-                    }
-                }
             }
         } catch (SQLException e) {
             throw new RuntimeException(e);
         }
-        System.out.println("Invalid username or password");
-        return false;
     }
 
-    private void missions(String url, String user, String pass) {
-        String query = "select spacecraft from moon_mission";
+    private boolean validateUser(AccountRepository account, Scanner scanner) throws SQLException {
 
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
+         System.out.println("Enter username: ");
+         String username = scanner.nextLine();
+         System.out.println("Enter password: ");
+         String password = scanner.nextLine();
 
-            try(PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                ResultSet result = preparedStatement.executeQuery();
-                while (result.next()){
-                    System.out.println(result.getString(1));
-                }
-            }
+         return account.validateUser(username, password);
+     }
 
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-    }
-
-    private void missionById(String url, String user, String pass, Scanner scanner) {
+    private void missionById(MoonMissionRepository missionRepository, Scanner scanner) throws SQLException {
         System.out.println("Input id: ");
         String id = scanner.nextLine().trim();
-        String query = "select * from moon_mission where mission_id = ?";
 
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
+        missionRepository.getMissionById(id);
 
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setString(1,id);
-
-                ResultSet result = preparedStatement.executeQuery();
-                while (result.next()){
-                    System.out.println("Details for mission id: " + result.getString(1)
-                            + ", Spacecraft: " + result.getString(2)
-                            + ", Launch date:" + result.getString(3)
-                            + ", Carrier rocket: " + result.getString(4)
-                            + ", Operator: " + result.getString(5)
-                            + ", Mission type:" + result.getString(6)
-                            + ", Outcome: " + result.getString(7));
-                }
-                result.close();
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
     }
 
-    private void missionCount(String url, String user, String pass, Scanner scanner) {
+    private void missionCount(MoonMissionRepository missionRepository, Scanner scanner) throws SQLException {
         System.out.println("Enter a year");
         int launch_date;
         try {
@@ -145,25 +92,11 @@ public class Main {
             System.out.println("Invalid year format");
             return;
         }
-        String query = "select count(*) from moon_mission where Year(launch_date) = ?";
 
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
-
-            try (PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-                preparedStatement.setInt(1, launch_date);
-                try(ResultSet result = preparedStatement.executeQuery()) {
-                if(result.next()) {
-                    System.out.println("there were " + result.getString(1) + " missions year " + launch_date);
-                    }
-                }
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        missionRepository.getMissionCountByYear(launch_date);
     }
 
-    private void createAccount(String url, String user, String pass, Scanner scanner) {
+    private void createAccount(AccountRepository account, Scanner scanner) throws SQLException {
         System.out.println("Enter first name: ");
         String first_name = scanner.nextLine().trim().toLowerCase();
         System.out.println("Enter last name: ");
@@ -173,69 +106,23 @@ public class Main {
         System.out.println("Enter password: ");
         String password = scanner.nextLine().trim().toLowerCase();
 
-        String insert = "insert into account (first_name, last_name, ssn, password) values (?, ?, ?, ?);";
-
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
-
-            try(PreparedStatement preparedStatement = connection.prepareStatement(insert)) {
-                preparedStatement.setString(1, first_name);
-                preparedStatement.setString(2, last_name);
-                preparedStatement.setString(3, ssn);
-                preparedStatement.setString(4, password);
-
-                preparedStatement.executeUpdate();
-                System.out.println("Account created.");
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
+        account.createAccount(first_name, last_name, ssn, password);
     }
 
-    private void updateAccountPassword(String url, String user, String pass, Scanner scanner) {
+    private void updateAccountPassword(AccountRepository account, Scanner scanner) throws SQLException {
         System.out.println("Enter id: ");
         String id = scanner.nextLine().trim();
         System.out.println("Enter new password: ");
         String newPassword = scanner.nextLine().trim().toLowerCase();
 
-        String update = "update account set password = ? where user_id = ?";
-
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
-
-            try(PreparedStatement preparedStatement = connection.prepareStatement(update)) {
-                preparedStatement.setString(1, newPassword);
-                preparedStatement.setString(2, id);
-
-                preparedStatement.executeUpdate();
-                System.out.println("Password updated for id " + id);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
+        account.updatePassword(newPassword, id);
     }
 
-    private void deleteAccount(String url, String user, String pass, Scanner scanner) {
+    private void deleteAccount(AccountRepository account, Scanner scanner) throws SQLException {
         System.out.println("Enter id: ");
         String id = scanner.nextLine().trim();
 
-        String delete = "delete from account where user_id = ?";
-
-        try (Connection connection = DriverManager.getConnection(url, user, pass)) {
-
-            try (PreparedStatement preparedStatement = connection.prepareStatement(delete)) {
-                preparedStatement.setString(1, id);
-
-                preparedStatement.executeUpdate();
-                System.out.println("Deleted user with id: " + id);
-            }
-
-        } catch (SQLException e) {
-            throw new RuntimeException(e);
-        }
-
-
+        account.deleteAccount(id);
     }
 
     /**
