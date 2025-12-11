@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 public class MoonMissionRepository {
 
-    private Connection connection;
+    private final Connection connection;
 
     public MoonMissionRepository(Connection connection) {
         this.connection = connection;
@@ -17,9 +17,10 @@ public class MoonMissionRepository {
         String query = "select spacecraft from moon_mission";
 
         try(PreparedStatement preparedStatement = connection.prepareStatement(query)) {
-            ResultSet result = preparedStatement.executeQuery();
+            try(ResultSet result = preparedStatement.executeQuery()) {
             while (result.next()){
                 System.out.println(result.getString(1));
+            }
             }
         }
     }

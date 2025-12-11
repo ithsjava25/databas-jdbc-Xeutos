@@ -1,9 +1,7 @@
 package com.example;
 
 import java.sql.*;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 import java.util.Scanner;
 
 public class Main {
@@ -32,8 +30,7 @@ public class Main {
             MoonMissionRepository moonMission = new MoonMissionRepository(connection);
             Scanner scanner = new Scanner(System.in);
 
-
-            boolean verifiedUser = validateUser(account, scanner); ;
+            boolean verifiedUser = validateUser(account, scanner);
 
             System.out.println("""
                 1) List moon missions
@@ -68,9 +65,9 @@ public class Main {
     private boolean validateUser(AccountRepository account, Scanner scanner) throws SQLException {
 
          System.out.println("Enter username: ");
-         String username = scanner.nextLine();
+         String username = scanner.nextLine().trim();
          System.out.println("Enter password: ");
-         String password = scanner.nextLine();
+         String password = scanner.nextLine().trim();
 
          return account.validateUser(username, password);
      }
@@ -104,7 +101,7 @@ public class Main {
         System.out.println("Enter ssn: ");
         String ssn = scanner.nextLine().trim();
         System.out.println("Enter password: ");
-        String password = scanner.nextLine().trim().toLowerCase();
+        String password = scanner.nextLine().trim();
 
         account.createAccount(first_name, last_name, ssn, password);
     }
@@ -113,7 +110,7 @@ public class Main {
         System.out.println("Enter id: ");
         String id = scanner.nextLine().trim();
         System.out.println("Enter new password: ");
-        String newPassword = scanner.nextLine().trim().toLowerCase();
+        String newPassword = scanner.nextLine().trim();
 
         account.updatePassword(newPassword, id);
     }

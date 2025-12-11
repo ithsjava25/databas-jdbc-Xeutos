@@ -4,7 +4,7 @@ import java.sql.*;
 import java.util.Objects;
 
 public class AccountRepository {
-    private Connection connection;
+    private final Connection connection;
 
     public AccountRepository(Connection connection){
         this.connection = connection;
@@ -53,8 +53,10 @@ public class AccountRepository {
             preparedStatement.setString(1, newPassword);
             preparedStatement.setString(2, id);
 
-            preparedStatement.executeUpdate();
+            var rows = preparedStatement.executeUpdate();
+            if (rows > 0) {
             System.out.println("Password updated for id " + id);
+            }
         }
     }
 
@@ -64,8 +66,10 @@ public class AccountRepository {
         try (PreparedStatement preparedStatement = connection.prepareStatement(delete)) {
             preparedStatement.setString(1, id);
 
-            preparedStatement.executeUpdate();
+            var rows = preparedStatement.executeUpdate();
+            if (rows > 0) {
             System.out.println("Deleted user with id: " + id);
+            }
         }
     }
 }
